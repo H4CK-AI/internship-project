@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a comprehensive Streamlit-based web application for bike rental demand prediction using time series forecasting. The system provides an end-to-end solution for data exploration, model training, prediction generation, and performance comparison using multiple machine learning approaches including ARIMA, SARIMA, and LSTM models.
+This is a comprehensive Streamlit-based web application for bike rental demand prediction using time series forecasting. The system provides an end-to-end solution for data exploration, model training, prediction generation, and performance comparison using statistical machine learning approaches including ARIMA and SARIMA models. The application has been optimized for deployment compatibility by removing TensorFlow dependencies.
 
 ## User Preferences
 
@@ -71,12 +71,11 @@ Preferred communication style: Simple, everyday language.
 ### Machine Learning Stack
 - **Statsmodels**: Statistical time series models (ARIMA, SARIMA)
 - **pmdarima**: Automated ARIMA parameter selection
-- **TensorFlow/Keras**: Deep learning models (LSTM)
 - **Scikit-learn**: Model evaluation and preprocessing
 
 ### Optional Dependencies
 - **Seaborn/Matplotlib**: Additional visualization options
-- Graceful fallback when deep learning libraries unavailable
+- Graceful fallback when advanced ML libraries unavailable
 
 ## Deployment Strategy
 

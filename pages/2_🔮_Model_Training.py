@@ -38,12 +38,16 @@ def main():
         st.info("This is likely due to TensorFlow compatibility issues. The application will work with statistical models only.")
         return
     
-    # Check if processed data is available
-    if st.session_state.processed_data is None:
-        st.warning("⚠️ No processed data available. Please complete data exploration first.")
+    # Check if data is available
+    if not hasattr(st.session_state, 'data') or st.session_state.data is None:
+        st.warning("⚠️ No data available. Please upload a dataset on the main page first.")
         st.stop()
     
-    data = st.session_state.processed_data.copy()
+    # Use processed data if available, otherwise use original data
+    if hasattr(st.session_state, 'processed_data') and st.session_state.processed_data is not None:
+        data = st.session_state.processed_data.copy()
+    else:
+        data = st.session_state.data.copy()
     
     # Ensure datetime column is properly formatted
     if 'datetime' in data.columns:

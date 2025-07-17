@@ -9,16 +9,16 @@ import warnings
 warnings.filterwarnings('ignore')
 
 try:
-    from utils.models_simple import ARIMAModel, SARIMAModel, LSTMModel
+    from utils.models_simple import ARIMAModel, SARIMAModel
     from utils.visualization import ModelVisualizer
     MODELS_AVAILABLE = True
 except Exception as e:
     try:
-        from utils.models import ARIMAModel, SARIMAModel, LSTMModel
+        from utils.models import ARIMAModel, SARIMAModel
         from utils.visualization import ModelVisualizer
         MODELS_AVAILABLE = True
     except Exception as e2:
-        ARIMAModel, SARIMAModel, LSTMModel = None, None, None
+        ARIMAModel, SARIMAModel = None, None
         ModelVisualizer = None
         MODELS_AVAILABLE = False
 

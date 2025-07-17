@@ -59,7 +59,7 @@ def main():
     This comprehensive application helps you predict bike rental demand using advanced time-series forecasting models including:
     - **ARIMA** (AutoRegressive Integrated Moving Average)
     - **SARIMA** (Seasonal ARIMA)
-    - **LSTM** (Long Short-Term Memory Neural Networks)
+
     
     ### How to Use This Application:
     1. **📊 Data Exploration**: Upload your bike rental dataset and explore the data
