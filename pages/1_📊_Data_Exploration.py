@@ -79,6 +79,19 @@ def main():
     # Use processed data if available, otherwise use original
     working_data = st.session_state.processed_data if st.session_state.processed_data is not None else data
     
+    # Fix data types for Arrow compatibility
+    working_data = working_data.copy()
+    for col in working_data.columns:
+        if working_data[col].dtype == 'object':
+            # Try to convert to numeric if possible
+            try:
+                working_data[col] = pd.to_numeric(working_data[col], errors='ignore')
+            except:
+                pass
+        # Convert Int64 to int64 for Arrow compatibility
+        elif str(working_data[col].dtype) == 'Int64':
+            working_data[col] = working_data[col].astype('int64')
+    
     # Display available columns for debugging
     st.expander("🔍 Available Columns").write(f"Columns in dataset: {list(working_data.columns)}")
     

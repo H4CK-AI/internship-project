@@ -134,10 +134,25 @@ class DataPreprocessor:
         # Handle remaining missing values
         data = data.ffill().bfill()
         
-        # Ensure numeric columns are properly typed
+        # Ensure numeric columns are properly typed for Arrow compatibility
         numeric_columns = data.select_dtypes(include=[np.number]).columns
         for col in numeric_columns:
-            data[col] = pd.to_numeric(data[col], errors='coerce')
+            try:
+                # Convert to float64 for consistency and Arrow compatibility
+                data[col] = pd.to_numeric(data[col], errors='coerce').astype('float64')
+            except:
+                # If conversion fails, keep as is
+                pass
+        
+        # Handle object columns with mixed types
+        object_columns = data.select_dtypes(include=['object']).columns
+        for col in object_columns:
+            if col != 'datetime':  # Don't convert datetime columns
+                # Try to convert to numeric if possible
+                try:
+                    data[col] = pd.to_numeric(data[col], errors='ignore')
+                except:
+                    pass
         
         # Remove any rows with all NaN values
         data = data.dropna(how='all')
