@@ -318,14 +318,14 @@ def main():
         st.subheader("🔝 Peak Demand Hours")
         
         for idx, row in peak_hours.iterrows():
-            st.write(f"**{row['datetime'].strftime('%Y-%m-%d %H:%00')}**: {row['predicted_count']:.1f} bikes")
+            st.write(f"**{row['datetime'].strftime('%Y-%m-%d %H:00')}**: {row['predicted_count']:.1f} bikes")
         
         # Low demand hours
         low_hours = prediction_df.nsmallest(3, 'predicted_count')
         st.subheader("📉 Low Demand Hours")
         
         for idx, row in low_hours.iterrows():
-            st.write(f"**{row['datetime'].strftime('%Y-%m-%d %H:%00')}**: {row['predicted_count']:.1f} bikes")
+            st.write(f"**{row['datetime'].strftime('%Y-%m-%d %H:00')}**: {row['predicted_count']:.1f} bikes")
         
         # Recommendations
         st.subheader("🎯 Operational Recommendations")
