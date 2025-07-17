@@ -126,38 +126,41 @@ def main():
         except Exception as e:
             st.error(f"❌ Error loading dataset: {str(e)}")
             st.info("Please ensure your CSV file has the correct format with datetime and count columns.")
-    
     else:
-        st.info("👆 Please upload a CSV file to get started")
-        
-        # Show sample data format
-        st.subheader("📋 Expected Data Format")
-        st.markdown("""
-        Your CSV file should contain the following columns:
-        - **datetime**: Date and time information (e.g., '2023-01-01 10:00:00')
-        - **count**: Number of bike rentals
-        - **temp**: Temperature (optional)
-        - **humidity**: Humidity (optional)
-        - **windspeed**: Wind speed (optional)
-        - **weather**: Weather conditions (optional)
-        - **holiday**: Holiday indicator (optional)
-        - **workingday**: Working day indicator (optional)
-        """)
-        
-        # Create sample data format
-        sample_data = pd.DataFrame({
-            'datetime': pd.date_range('2023-01-01', periods=24, freq='h'),
-            'count': np.random.randint(50, 500, 24),
-            'temp': np.random.uniform(10, 30, 24),
-            'humidity': np.random.uniform(30, 90, 24),
-            'windspeed': np.random.uniform(0, 20, 24),
-            'weather': np.random.choice(['Clear', 'Cloudy', 'Rainy'], 24),
-            'holiday': np.random.choice([0, 1], 24),
-            'workingday': np.random.choice([0, 1], 24)
-        })
-        
-        st.write("**Sample Data Format:**")
-        st.dataframe(sample_data.head(), use_container_width=True)
+        # If no file is uploaded, load hour.csv by default
+        try:
+            data = pd.read_csv("internship-project/hour.csv")
+            st.session_state.data = data
+            st.info("No file uploaded. Using default dataset: hour.csv")
+            
+            # Display basic information
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Records", len(data))
+            with col2:
+                st.metric("Columns", len(data.columns))
+            with col3:
+                st.metric("Missing Values", data.isnull().sum().sum())
+            with col4:
+                st.metric("Duplicate Records", data.duplicated().sum())
+            
+            # Display sample data
+            st.subheader("📋 Sample Data")
+            st.dataframe(data.head(10), use_container_width=True)
+            
+            # Data info
+            st.subheader("📊 Dataset Information")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write("**Column Types:**")
+                st.write(data.dtypes)
+            with col2:
+                st.write("**Statistical Summary:**")
+                st.write(data.describe())
+        except Exception as e:
+            st.session_state.data = None
+            st.error(f"❌ Error loading default dataset hour.csv: {str(e)}")
+            st.info("Please upload a CSV file to get started.")
     
     # Footer
     st.markdown("---")
