@@ -8,18 +8,18 @@ import warnings
 warnings.filterwarnings('ignore')
 
 try:
-    from utils.models_simple import ARIMAModel, SARIMAModel, LSTMModel
+    from utils.models_simple import ARIMAModel, SARIMAModel
     from utils.metrics import ModelEvaluator
     from utils.visualization import ModelVisualizer
     MODELS_AVAILABLE = True
 except Exception as e:
     try:
-        from utils.models import ARIMAModel, SARIMAModel, LSTMModel
+        from utils.models import ARIMAModel, SARIMAModel
         from utils.metrics import ModelEvaluator
         from utils.visualization import ModelVisualizer
         MODELS_AVAILABLE = True
     except Exception as e2:
-        ARIMAModel, SARIMAModel, LSTMModel = None, None, None
+        ARIMAModel, SARIMAModel = None, None
         ModelEvaluator, ModelVisualizer = None, None
         MODELS_AVAILABLE = False
 
@@ -69,9 +69,9 @@ def main():
             index=0 if 'count' not in data.columns else list(data.columns).index('count') - 1
         )
         
-        # Feature columns for LSTM
+        # Additional feature columns
         feature_columns = st.multiselect(
-            "Feature Columns (for LSTM)",
+            "Additional Feature Columns",
             [col for col in data.columns if col not in ['datetime', target_column]],
             default=[]
         )
@@ -99,7 +99,7 @@ def main():
     st.header("🤖 Model Selection and Training")
     
     # Model tabs
-    tab1, tab2, tab3 = st.tabs(["ARIMA", "SARIMA", "LSTM"])
+    tab1, tab2 = st.tabs(["ARIMA", "SARIMA"])
     
     with tab1:
         st.subheader("ARIMA Model Configuration")
@@ -268,119 +268,6 @@ def main():
             except Exception as e:
                 st.error(f"❌ Error training SARIMA model: {str(e)}")
     
-    with tab3:
-        st.subheader("LSTM Model Configuration")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("**LSTM Architecture:**")
-            lstm_units = st.slider("LSTM Units", 32, 256, 64, key="lstm_units")
-            lstm_layers = st.slider("Number of LSTM Layers", 1, 3, 2, key="lstm_layers")
-            dropout_rate = st.slider("Dropout Rate", 0.0, 0.5, 0.2, key="dropout_rate")
-            lookback_window = st.slider("Lookback Window", 5, 50, 20, key="lookback_window")
-        
-        with col2:
-            st.write("**Training Parameters:**")
-            epochs = st.slider("Epochs", 10, 200, 50, key="epochs")
-            batch_size = st.slider("Batch Size", 16, 128, 32, key="batch_size")
-            learning_rate = st.selectbox("Learning Rate", [0.001, 0.01, 0.1], index=0, key="learning_rate")
-            validation_split = st.slider("Validation Split", 0.1, 0.3, 0.2, key="validation_split")
-        
-        if st.button("🚀 Train LSTM Model", key="train_lstm"):
-            try:
-                with st.spinner("Training LSTM model..."):
-                    lstm_model = LSTMModel()
-                    
-                    # Prepare features
-                    if feature_columns:
-                        features = train_data[feature_columns + [target_column]]
-                        test_features = test_data[feature_columns + [target_column]]
-                    else:
-                        features = train_data[[target_column]]
-                        test_features = test_data[[target_column]]
-                    
-                    model, history, predictions = lstm_model.fit(
-                        features,
-                        target_column,
-                        lookback_window=lookback_window,
-                        lstm_units=lstm_units,
-                        num_layers=lstm_layers,
-                        dropout_rate=dropout_rate,
-                        epochs=epochs,
-                        batch_size=batch_size,
-                        learning_rate=learning_rate,
-                        validation_split=validation_split,
-                        test_data=test_features
-                    )
-                    
-                    # Store model and predictions
-                    st.session_state.models['LSTM'] = {
-                        'model': model,
-                        'history': history,
-                        'predictions': predictions,
-                        'train_data': train_data[target_column],
-                        'test_data': test_data[target_column]
-                    }
-                    
-                    # Calculate metrics
-                    evaluator = ModelEvaluator()
-                    metrics = evaluator.calculate_metrics(
-                        test_data[target_column].values[-len(predictions):],
-                        predictions
-                    )
-                    st.session_state.model_metrics['LSTM'] = metrics
-                    
-                    st.success("✅ LSTM model trained successfully!")
-                    
-                    # Display metrics
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("MAE", f"{metrics['mae']:.2f}")
-                    with col2:
-                        st.metric("RMSE", f"{metrics['rmse']:.2f}")
-                    with col3:
-                        st.metric("MAPE", f"{metrics['mape']:.2f}%")
-                    with col4:
-                        st.metric("R²", f"{metrics['r2']:.3f}")
-                    
-                    # Plot training history
-                    if history:
-                        fig_history = go.Figure()
-                        fig_history.add_trace(go.Scatter(
-                            y=history.history['loss'],
-                            mode='lines',
-                            name='Training Loss'
-                        ))
-                        if 'val_loss' in history.history:
-                            fig_history.add_trace(go.Scatter(
-                                y=history.history['val_loss'],
-                                mode='lines',
-                                name='Validation Loss'
-                            ))
-                        fig_history.update_layout(
-                            title="LSTM Training History",
-                            xaxis_title="Epoch",
-                            yaxis_title="Loss"
-                        )
-                        st.plotly_chart(fig_history, use_container_width=True)
-                    
-                    # Plot predictions
-                    visualizer = ModelVisualizer()
-                    fig = visualizer.plot_forecast_results(
-                        train_data['datetime'] if 'datetime' in train_data.columns else None,
-                        test_data['datetime'][-len(predictions):] if 'datetime' in test_data.columns else None,
-                        train_data[target_column],
-                        test_data[target_column].values[-len(predictions):],
-                        predictions,
-                        "LSTM Model Results"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-            except Exception as e:
-                st.error(f"❌ Error training LSTM model: {str(e)}")
-    
-    # Model summary
     if st.session_state.models:
         st.header("📊 Training Summary")
         

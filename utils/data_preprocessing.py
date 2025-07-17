@@ -17,12 +17,14 @@ def ensure_arrow_compatibility(data):
     data = data.copy()
     
     for col in data.columns:
-        # Handle nullable integer types
+        # Handle nullable integer types - convert to regular int64
         if str(data[col].dtype) in ['Int64', 'Int32', 'Int16', 'Int8']:
+            # Convert nullable int to regular int64, filling NaN with 0
             data[col] = data[col].fillna(0).astype('int64')
         # Handle nullable float types
         elif str(data[col].dtype) in ['Float64', 'Float32']:
-            data[col] = data[col].astype('float64')
+            # Convert nullable float to regular float64
+            data[col] = data[col].fillna(0.0).astype('float64')
         # Handle numeric columns
         elif data[col].dtype in [np.int64, np.int32, np.float64, np.float32]:
             data[col] = data[col].astype('float64')
@@ -32,12 +34,15 @@ def ensure_arrow_compatibility(data):
             try:
                 numeric_version = pd.to_numeric(data[col], errors='coerce')
                 if not numeric_version.isna().all():
-                    data[col] = numeric_version.astype('float64')
+                    data[col] = numeric_version.fillna(0.0).astype('float64')
                 else:
                     # Keep as string if it can't be converted
                     data[col] = data[col].astype('str')
             except:
                 data[col] = data[col].astype('str')
+        # Handle any remaining mixed types by converting to strings
+        elif hasattr(data[col], 'dtype') and 'mixed' in str(data[col].dtype):
+            data[col] = data[col].astype('str')
     
     return data
 
