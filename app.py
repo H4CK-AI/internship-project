@@ -129,7 +129,7 @@ def main():
     else:
         # If no file is uploaded, load hour.csv by default
         try:
-            data = pd.read_csv("internship-project/hour.csv")
+            data = pd.read_csv("hour.csv")
             st.session_state.data = data
             st.info("No file uploaded. Using default dataset: hour.csv")
             
