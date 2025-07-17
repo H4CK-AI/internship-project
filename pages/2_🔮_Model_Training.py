@@ -7,9 +7,21 @@ from plotly.subplots import make_subplots
 import warnings
 warnings.filterwarnings('ignore')
 
-from utils.models import ARIMAModel, SARIMAModel, LSTMModel
-from utils.metrics import ModelEvaluator
-from utils.visualization import ModelVisualizer
+try:
+    from utils.models_simple import ARIMAModel, SARIMAModel, LSTMModel
+    from utils.metrics import ModelEvaluator
+    from utils.visualization import ModelVisualizer
+    MODELS_AVAILABLE = True
+except Exception as e:
+    try:
+        from utils.models import ARIMAModel, SARIMAModel, LSTMModel
+        from utils.metrics import ModelEvaluator
+        from utils.visualization import ModelVisualizer
+        MODELS_AVAILABLE = True
+    except Exception as e2:
+        ARIMAModel, SARIMAModel, LSTMModel = None, None, None
+        ModelEvaluator, ModelVisualizer = None, None
+        MODELS_AVAILABLE = False
 
 st.set_page_config(
     page_title="Model Training - Bike Rental Prediction",
@@ -19,6 +31,12 @@ st.set_page_config(
 
 def main():
     st.title("🔮 Model Training and Hyperparameter Tuning")
+    
+    # Check if models are available
+    if not MODELS_AVAILABLE:
+        st.error("⚠️ Model training is currently unavailable due to library compatibility issues. Please try using only ARIMA/SARIMA models.")
+        st.info("This is likely due to TensorFlow compatibility issues. The application will work with statistical models only.")
+        return
     
     # Check if processed data is available
     if st.session_state.processed_data is None:

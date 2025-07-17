@@ -7,8 +7,13 @@ from plotly.subplots import make_subplots
 import warnings
 warnings.filterwarnings('ignore')
 
-from utils.metrics import ModelEvaluator
-from utils.visualization import ModelVisualizer
+try:
+    from utils.metrics import ModelEvaluator
+    from utils.visualization import ModelVisualizer
+    MODELS_AVAILABLE = True
+except Exception as e:
+    ModelEvaluator, ModelVisualizer = None, None
+    MODELS_AVAILABLE = False
 
 st.set_page_config(
     page_title="Model Comparison - Bike Rental Prediction",
@@ -18,6 +23,12 @@ st.set_page_config(
 
 def main():
     st.title("📋 Model Comparison and Performance Analysis")
+    
+    # Check if models are available
+    if not MODELS_AVAILABLE:
+        st.error("⚠️ Model comparison is currently unavailable due to library compatibility issues.")
+        st.info("This is likely due to TensorFlow compatibility issues. Please try restarting the application.")
+        return
     
     # Check if models are trained
     if not st.session_state.models or not st.session_state.model_metrics:

@@ -33,10 +33,18 @@ try:
     from tensorflow.keras.optimizers import Adam
     from tensorflow.keras.callbacks import EarlyStopping
     from sklearn.preprocessing import MinMaxScaler
-except ImportError:
+    TENSORFLOW_AVAILABLE = True
+except (ImportError, TypeError, Exception) as e:
+    # Handle TensorFlow import errors including dtype conversion issues
     tf = None
     Sequential = None
     LSTM = None
+    Dense = None
+    Dropout = None
+    Adam = None
+    EarlyStopping = None
+    MinMaxScaler = None
+    TENSORFLOW_AVAILABLE = False
 
 class ARIMAModel:
     def __init__(self):
@@ -315,8 +323,8 @@ class LSTMModel:
         Returns:
             tuple: (model, history, predictions)
         """
-        if tf is None:
-            raise ImportError("TensorFlow is required for LSTM modeling")
+        if not TENSORFLOW_AVAILABLE:
+            raise ImportError("TensorFlow is required for LSTM modeling but is not available")
         
         try:
             self.lookback_window = lookback_window
@@ -397,6 +405,9 @@ class LSTMModel:
         Returns:
             np.array: Predictions
         """
+        if not TENSORFLOW_AVAILABLE:
+            raise ImportError("TensorFlow is required for LSTM prediction but is not available")
+        
         if model is None:
             raise ValueError("Model must be fitted before making predictions")
         

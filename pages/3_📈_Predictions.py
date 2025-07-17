@@ -8,8 +8,19 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
-from utils.models import ARIMAModel, SARIMAModel, LSTMModel
-from utils.visualization import ModelVisualizer
+try:
+    from utils.models_simple import ARIMAModel, SARIMAModel, LSTMModel
+    from utils.visualization import ModelVisualizer
+    MODELS_AVAILABLE = True
+except Exception as e:
+    try:
+        from utils.models import ARIMAModel, SARIMAModel, LSTMModel
+        from utils.visualization import ModelVisualizer
+        MODELS_AVAILABLE = True
+    except Exception as e2:
+        ARIMAModel, SARIMAModel, LSTMModel = None, None, None
+        ModelVisualizer = None
+        MODELS_AVAILABLE = False
 
 st.set_page_config(
     page_title="Predictions - Bike Rental Prediction",
@@ -19,6 +30,12 @@ st.set_page_config(
 
 def main():
     st.title("📈 Real-time Predictions and Forecasting")
+    
+    # Check if models are available
+    if not MODELS_AVAILABLE:
+        st.error("⚠️ Predictions are currently unavailable due to library compatibility issues.")
+        st.info("This is likely due to TensorFlow compatibility issues. Please try restarting the application.")
+        return
     
     # Check if models are trained
     if not st.session_state.models:
