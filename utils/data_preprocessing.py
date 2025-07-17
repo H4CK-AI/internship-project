@@ -4,6 +4,43 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
+def ensure_arrow_compatibility(data):
+    """
+    Ensure data is compatible with Arrow serialization
+    
+    Args:
+        data (pd.DataFrame): Input data
+        
+    Returns:
+        pd.DataFrame: Arrow-compatible data
+    """
+    data = data.copy()
+    
+    for col in data.columns:
+        # Handle nullable integer types
+        if str(data[col].dtype) in ['Int64', 'Int32', 'Int16', 'Int8']:
+            data[col] = data[col].fillna(0).astype('int64')
+        # Handle nullable float types
+        elif str(data[col].dtype) in ['Float64', 'Float32']:
+            data[col] = data[col].astype('float64')
+        # Handle numeric columns
+        elif data[col].dtype in [np.int64, np.int32, np.float64, np.float32]:
+            data[col] = data[col].astype('float64')
+        # Handle object columns
+        elif data[col].dtype == 'object' and col not in ['datetime', 'date']:
+            # Try to convert to numeric if possible
+            try:
+                numeric_version = pd.to_numeric(data[col], errors='coerce')
+                if not numeric_version.isna().all():
+                    data[col] = numeric_version.astype('float64')
+                else:
+                    # Keep as string if it can't be converted
+                    data[col] = data[col].astype('str')
+            except:
+                data[col] = data[col].astype('str')
+    
+    return data
+
 class DataPreprocessor:
     def __init__(self):
         self.scaler = None
@@ -134,25 +171,8 @@ class DataPreprocessor:
         # Handle remaining missing values
         data = data.ffill().bfill()
         
-        # Ensure numeric columns are properly typed for Arrow compatibility
-        numeric_columns = data.select_dtypes(include=[np.number]).columns
-        for col in numeric_columns:
-            try:
-                # Convert to float64 for consistency and Arrow compatibility
-                data[col] = pd.to_numeric(data[col], errors='coerce').astype('float64')
-            except:
-                # If conversion fails, keep as is
-                pass
-        
-        # Handle object columns with mixed types
-        object_columns = data.select_dtypes(include=['object']).columns
-        for col in object_columns:
-            if col != 'datetime':  # Don't convert datetime columns
-                # Try to convert to numeric if possible
-                try:
-                    data[col] = pd.to_numeric(data[col], errors='ignore')
-                except:
-                    pass
+        # Use the utility function to ensure Arrow compatibility
+        data = ensure_arrow_compatibility(data)
         
         # Remove any rows with all NaN values
         data = data.dropna(how='all')
