@@ -103,7 +103,7 @@ def main():
                 prediction_dates = pd.date_range(
                     start=start_datetime,
                     periods=forecast_horizon,
-                    freq='H'
+                    freq='h'
                 )
                 
                 model_data = st.session_state.models[selected_model]

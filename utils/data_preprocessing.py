@@ -35,7 +35,7 @@ class DataPreprocessor:
         else:
             # Create a datetime column if none exists
             processed_data['datetime'] = pd.date_range(
-                start='2023-01-01', periods=len(processed_data), freq='H'
+                start='2023-01-01', periods=len(processed_data), freq='h'
             )
         
         # Sort by datetime
@@ -60,14 +60,14 @@ class DataPreprocessor:
     def _handle_missing_values(self, data, strategy):
         """Handle missing values based on strategy"""
         if strategy == 'forward_fill':
-            return data.fillna(method='ffill')
+            return data.ffill()
         elif strategy == 'backward_fill':
-            return data.fillna(method='bfill')
+            return data.bfill()
         elif strategy == 'interpolate':
             numeric_columns = data.select_dtypes(include=[np.number]).columns
             for col in numeric_columns:
                 data[col] = data[col].interpolate()
-            return data.fillna(method='ffill')  # Handle any remaining missing values
+            return data.ffill()  # Handle any remaining missing values
         elif strategy == 'drop_rows':
             return data.dropna()
         else:
@@ -132,7 +132,7 @@ class DataPreprocessor:
         data = data.replace([np.inf, -np.inf], np.nan)
         
         # Handle remaining missing values
-        data = data.fillna(method='ffill').fillna(method='bfill')
+        data = data.ffill().bfill()
         
         # Ensure numeric columns are properly typed
         numeric_columns = data.select_dtypes(include=[np.number]).columns

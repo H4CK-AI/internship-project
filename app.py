@@ -146,7 +146,7 @@ def main():
         
         # Create sample data format
         sample_data = pd.DataFrame({
-            'datetime': pd.date_range('2023-01-01', periods=24, freq='H'),
+            'datetime': pd.date_range('2023-01-01', periods=24, freq='h'),
             'count': np.random.randint(50, 500, 24),
             'temp': np.random.uniform(10, 30, 24),
             'humidity': np.random.uniform(30, 90, 24),
