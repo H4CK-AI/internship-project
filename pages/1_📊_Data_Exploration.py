@@ -79,6 +79,9 @@ def main():
     # Use processed data if available, otherwise use original
     working_data = st.session_state.processed_data if st.session_state.processed_data is not None else data
     
+    # Display available columns for debugging
+    st.expander("🔍 Available Columns").write(f"Columns in dataset: {list(working_data.columns)}")
+    
     # Data overview
     st.header("📋 Data Overview")
     
@@ -87,7 +90,16 @@ def main():
     with col1:
         st.subheader("Dataset Summary")
         st.write(f"**Shape:** {working_data.shape}")
-        st.write(f"**Date Range:** {working_data['datetime'].min()} to {working_data['datetime'].max()}")
+        
+        # Check if datetime column exists
+        if 'datetime' in working_data.columns:
+            # Convert datetime if it's not already
+            if not pd.api.types.is_datetime64_any_dtype(working_data['datetime']):
+                working_data['datetime'] = pd.to_datetime(working_data['datetime'])
+            st.write(f"**Date Range:** {working_data['datetime'].min()} to {working_data['datetime'].max()}")
+        else:
+            st.write("**Date Range:** Not available (no datetime column)")
+            
         st.write(f"**Total Records:** {len(working_data):,}")
         
         # Missing values
@@ -110,18 +122,38 @@ def main():
     # Time series plot
     st.subheader("Time Series Analysis")
     
-    if 'datetime' in working_data.columns and 'count' in working_data.columns:
+    # Try to find datetime column
+    datetime_col = None
+    for col in working_data.columns:
+        if 'datetime' in col.lower() or 'date' in col.lower() or 'time' in col.lower():
+            datetime_col = col
+            break
+    
+    # Try to find target column
+    target_col = None
+    for col in working_data.columns:
+        if col.lower() in ['count', 'cnt', 'target', 'y', 'demand', 'rental', 'bike']:
+            target_col = col
+            break
+    
+    # If still not found, use first numeric column
+    if target_col is None:
+        numeric_cols = working_data.select_dtypes(include=[np.number]).columns
+        if len(numeric_cols) > 0:
+            target_col = numeric_cols[0]
+    
+    if datetime_col and target_col:
         # Convert datetime if it's not already
-        if not pd.api.types.is_datetime64_any_dtype(working_data['datetime']):
-            working_data['datetime'] = pd.to_datetime(working_data['datetime'])
+        if not pd.api.types.is_datetime64_any_dtype(working_data[datetime_col]):
+            working_data[datetime_col] = pd.to_datetime(working_data[datetime_col])
         
         # Main time series plot
-        fig = visualizer.create_time_series_plot(working_data, 'datetime', 'count')
+        fig = visualizer.create_time_series_plot(working_data, datetime_col, target_col)
         st.plotly_chart(fig, use_container_width=True)
         
         # Seasonal decomposition
         st.subheader("Seasonal Decomposition")
-        decomp_fig = visualizer.create_seasonal_decomposition(working_data, 'datetime', 'count')
+        decomp_fig = visualizer.create_seasonal_decomposition(working_data, datetime_col, target_col)
         st.plotly_chart(decomp_fig, use_container_width=True)
         
         # Distribution analysis
@@ -132,10 +164,10 @@ def main():
             # Histogram
             hist_fig = px.histogram(
                 working_data, 
-                x='count', 
+                x=target_col, 
                 nbins=50,
-                title='Distribution of Bike Rentals',
-                labels={'count': 'Bike Count', 'count_count': 'Frequency'}
+                title=f'Distribution of {target_col}',
+                labels={target_col: target_col.title(), f'{target_col}_count': 'Frequency'}
             )
             st.plotly_chart(hist_fig, use_container_width=True)
         
@@ -143,8 +175,8 @@ def main():
             # Box plot
             box_fig = px.box(
                 working_data, 
-                y='count',
-                title='Box Plot of Bike Rentals'
+                y=target_col,
+                title=f'Box Plot of {target_col}'
             )
             st.plotly_chart(box_fig, use_container_width=True)
         
@@ -164,24 +196,24 @@ def main():
             
             with col1:
                 # Hourly pattern
-                hourly_avg = working_data.groupby('hour')['count'].mean().reset_index()
+                hourly_avg = working_data.groupby('hour')[target_col].mean().reset_index()
                 hourly_fig = px.bar(
                     hourly_avg, 
                     x='hour', 
-                    y='count',
-                    title='Average Bike Rentals by Hour'
+                    y=target_col,
+                    title=f'Average {target_col} by Hour'
                 )
                 st.plotly_chart(hourly_fig, use_container_width=True)
             
             with col2:
                 # Daily pattern
                 if 'day_of_week' in working_data.columns:
-                    daily_avg = working_data.groupby('day_of_week')['count'].mean().reset_index()
+                    daily_avg = working_data.groupby('day_of_week')[target_col].mean().reset_index()
                     daily_fig = px.bar(
                         daily_avg, 
                         x='day_of_week', 
-                        y='count',
-                        title='Average Bike Rentals by Day of Week'
+                        y=target_col,
+                        title=f'Average {target_col} by Day of Week'
                     )
                     st.plotly_chart(daily_fig, use_container_width=True)
         
@@ -191,15 +223,15 @@ def main():
             weather_fig = px.box(
                 working_data, 
                 x='weather', 
-                y='count',
-                title='Bike Rentals by Weather Condition'
+                y=target_col,
+                title=f'{target_col} by Weather Condition'
             )
             st.plotly_chart(weather_fig, use_container_width=True)
         
         # Outlier detection
         if detect_outliers:
             st.subheader("Outlier Detection")
-            outliers = preprocessor.detect_outliers(working_data, 'count')
+            outliers = preprocessor.detect_outliers(working_data, target_col)
             
             if len(outliers) > 0:
                 st.warning(f"⚠️ Detected {len(outliers)} potential outliers")
@@ -208,8 +240,8 @@ def main():
                 working_data['is_outlier'] = working_data.index.isin(outliers)
                 scatter_fig = px.scatter(
                     working_data, 
-                    x='datetime', 
-                    y='count',
+                    x=datetime_col, 
+                    y=target_col,
                     color='is_outlier',
                     title='Time Series with Outliers Highlighted',
                     color_discrete_map={True: 'red', False: 'blue'}
@@ -218,12 +250,14 @@ def main():
                 
                 # Show outlier details
                 st.write("**Outlier Details:**")
-                st.dataframe(working_data[working_data['is_outlier']][['datetime', 'count']])
+                st.dataframe(working_data[working_data['is_outlier']][[datetime_col, target_col]])
             else:
                 st.success("✅ No outliers detected")
     
     else:
-        st.error("❌ Required columns 'datetime' and 'count' not found in the dataset")
+        st.error("❌ Could not find appropriate datetime and target columns")
+        st.info(f"Available columns: {list(working_data.columns)}")
+        st.info("Please ensure your dataset has datetime and numeric target columns, or apply preprocessing to create them.")
     
     # Data export
     st.header("💾 Export Processed Data")
